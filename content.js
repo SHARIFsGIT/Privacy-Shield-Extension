@@ -1,5 +1,5 @@
-// Privacy Shield Pro - Simplified Content Script
-class SimplePrivacyShield {
+// Privacy Shield - Professional Content Script
+class PrivacyShield {
   constructor() {
     this.enabled = false;
     this.mode = "blur";
@@ -9,15 +9,24 @@ class SimplePrivacyShield {
     this.originalContent = new Map();
     this.actionHistory = [];
     this.emergencyActive = false;
+    this.isInitialized = false;
+
     this.init();
   }
 
-  init() {
-    this.loadSettings();
-    this.initMessageListener();
-    this.initKeyboardShortcuts();
-    this.initSelectionHandling();
-    this.injectStyles();
+  async init() {
+    if (this.isInitialized) return;
+
+    try {
+      await this.loadSettings();
+      this.initEventListeners();
+      this.initKeyboardShortcuts();
+      this.initSelectionHandling();
+      this.injectStyles();
+      this.isInitialized = true;
+    } catch (error) {
+      console.error("Privacy Shield initialization failed:", error);
+    }
   }
 
   async loadSettings() {
@@ -31,23 +40,23 @@ class SimplePrivacyShield {
 
       this.enabled = data.enabled || false;
       this.mode = data.mode || "blur";
-      this.blurIntensity = Math.max(2, Math.min(30, data.blurIntensity || 8));
+      this.blurIntensity = Math.max(2, Math.min(20, data.blurIntensity || 8));
       this.maskSymbol = data.maskSymbol || "*";
 
       if (this.enabled) {
         this.activate();
       }
     } catch (error) {
-      console.error("Privacy Shield: Settings load error:", error);
+      console.error("Settings load failed:", error);
     }
   }
 
-  initMessageListener() {
+  initEventListeners() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       try {
         this.handleMessage(message, sendResponse);
       } catch (error) {
-        console.error("Privacy Shield: Message handling error:", error);
+        console.error("Message handling error:", error);
         sendResponse({ success: false, error: error.message });
       }
       return true;
@@ -61,7 +70,7 @@ class SimplePrivacyShield {
       changeMode: () => this.changeMode(message),
       updateBlurIntensity: () => this.updateBlurIntensity(message.intensity),
       updateMaskSymbol: () => this.updateMaskSymbol(message.symbol),
-      emergencyBlur: () => this.emergencyBlurAll(message.blurIntensity),
+      emergencyBlur: () => this.emergencyBlurAll(),
       removeAll: () => this.removeAllProtection(),
       getStats: () => this.getProtectionStats(),
       undoLastAction: () => this.undoLastAction(),
@@ -78,7 +87,7 @@ class SimplePrivacyShield {
 
   initKeyboardShortcuts() {
     document.addEventListener("keydown", (e) => {
-      // Global shortcut - Alt+P to toggle
+      // Global toggle - Alt+P
       if (e.altKey && e.key.toLowerCase() === "p") {
         e.preventDefault();
         this.quickToggle();
@@ -87,22 +96,24 @@ class SimplePrivacyShield {
 
       if (!this.enabled) return;
 
-      // Emergency blur: Alt+E
+      // Emergency blur - Alt+E
       if (e.altKey && e.key.toLowerCase() === "e") {
         e.preventDefault();
         this.emergencyBlurAll();
       }
 
-      // Remove all: Alt+R
+      // Remove all - Alt+R
       if (e.altKey && e.key.toLowerCase() === "r") {
         e.preventDefault();
         this.removeAllProtection();
       }
 
-      // Undo: Ctrl+Z
+      // Undo - Ctrl+Z
       if (e.ctrlKey && e.key.toLowerCase() === "z" && !e.shiftKey) {
-        e.preventDefault();
-        this.undoLastAction();
+        if (this.actionHistory.length > 0) {
+          e.preventDefault();
+          this.undoLastAction();
+        }
       }
     });
   }
@@ -110,13 +121,13 @@ class SimplePrivacyShield {
   initSelectionHandling() {
     let selectionTimeout;
 
-    const handleSelection = (e) => {
+    const handleSelection = () => {
       if (!this.enabled) return;
 
       clearTimeout(selectionTimeout);
       selectionTimeout = setTimeout(() => {
-        this.handleTextSelection(e);
-      }, 150);
+        this.checkSensitiveSelection();
+      }, 200);
     };
 
     document.addEventListener("mouseup", handleSelection);
@@ -129,42 +140,40 @@ class SimplePrivacyShield {
     const styleSheet = document.createElement("style");
     styleSheet.id = "privacy-shield-styles";
     styleSheet.textContent = `
-      .privacy-shield-active { cursor: crosshair !important; }
-      .privacy-shield-active * { cursor: crosshair !important; }
+      .privacy-shield-active { 
+        cursor: crosshair !important; 
+      }
+      .privacy-shield-active * { 
+        cursor: crosshair !important; 
+      }
       
       .privacy-shield-protected {
         position: relative !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
-        outline: 2px solid #4CAF50 !important;
-        outline-offset: 2px !important;
+        border: 2px solid #4CAF50 !important;
+        border-radius: 6px !important;
+        padding: 4px !important;
         background: rgba(76, 175, 80, 0.1) !important;
-        border-radius: 4px !important;
-        padding: 2px 4px !important;
       }
       
       .privacy-shield-protected::before {
         content: "🛡️" !important;
         position: absolute !important;
-        top: -12px !important;
-        right: -12px !important;
+        top: -15px !important;
+        right: -15px !important;
         background: #4CAF50 !important;
         color: white !important;
-        width: 24px !important;
-        height: 24px !important;
+        width: 30px !important;
+        height: 30px !important;
         border-radius: 50% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 10px !important;
+        font-size: 14px !important;
         z-index: 999996 !important;
-        border: 2px solid white !important;
-        animation: pulse 2s infinite !important;
-      }
-      
-      @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.1); opacity: 0.8; }
+        border: 3px solid white !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
       }
       
       .privacy-shield-active *:hover:not(.privacy-shield-protected) {
@@ -179,14 +188,16 @@ class SimplePrivacyShield {
         right: 20px !important;
         background: white !important;
         color: #333 !important;
-        padding: 12px 16px !important;
-        border-radius: 8px !important;
+        padding: 16px 20px !important;
+        border-radius: 10px !important;
         font-size: 14px !important;
         z-index: 999998 !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
         border-left: 4px solid #4CAF50 !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         animation: slideIn 0.3s ease !important;
+        min-width: 300px !important;
+        max-width: 400px !important;
       }
       
       @keyframes slideIn {
@@ -194,29 +205,43 @@ class SimplePrivacyShield {
         to { transform: translateX(0); opacity: 1; }
       }
       
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+      
       .privacy-click-notification {
         position: fixed !important;
         background: #4CAF50 !important;
         color: white !important;
-        padding: 8px 12px !important;
-        border-radius: 16px !important;
-        font-size: 12px !important;
+        padding: 10px 16px !important;
+        border-radius: 20px !important;
+        font-size: 13px !important;
         font-weight: 600 !important;
         z-index: 999999 !important;
         pointer-events: none !important;
         animation: popIn 0.3s ease !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+        min-width: 120px !important;
+        text-align: center !important;
       }
       
       @keyframes popIn {
         0% { opacity: 0; transform: translateX(-50%) scale(0.8); }
         100% { opacity: 1; transform: translateX(-50%) scale(1); }
       }
+      
+      @keyframes fadeOut {
+        from { opacity: 1; transform: translateX(-50%) translateY(0); }
+        to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+      }
     `;
 
     document.head.appendChild(styleSheet);
   }
 
+  // Core Functionality
   quickToggle() {
     this.enabled = !this.enabled;
     chrome.storage.sync.set({ enabled: this.enabled });
@@ -227,13 +252,7 @@ class SimplePrivacyShield {
       this.deactivate();
     }
 
-    // Notify popup
-    chrome.runtime
-      .sendMessage({
-        action: "statusUpdate",
-        enabled: this.enabled,
-      })
-      .catch(() => {});
+    this.notifyPopup();
   }
 
   toggleProtection(enabled) {
@@ -247,7 +266,6 @@ class SimplePrivacyShield {
   }
 
   activate() {
-    document.body.style.cursor = "crosshair";
     document.body.classList.add("privacy-shield-active");
 
     this.clickHandler = this.handleClick.bind(this);
@@ -259,10 +277,10 @@ class SimplePrivacyShield {
     document.addEventListener("mouseout", this.hoverOutHandler, true);
 
     this.showNotification("🛡️ Privacy Shield activated", "success");
+    this.updateBadge();
   }
 
   deactivate() {
-    document.body.style.cursor = "";
     document.body.classList.remove("privacy-shield-active");
 
     if (this.clickHandler) {
@@ -272,6 +290,7 @@ class SimplePrivacyShield {
     }
 
     this.showNotification("🔓 Privacy Shield deactivated", "info");
+    this.updateBadge();
   }
 
   handleClick(e) {
@@ -292,6 +311,8 @@ class SimplePrivacyShield {
       this.showClickNotification("🛡️ Protected", element);
       this.addToHistory({ action: "protect", elementId, element });
     }
+
+    this.updateBadge();
   }
 
   handleHover(e) {
@@ -314,7 +335,7 @@ class SimplePrivacyShield {
     }
   }
 
-  handleTextSelection(e) {
+  checkSensitiveSelection() {
     const selection = window.getSelection();
     const selectedText = selection.toString().trim();
 
@@ -333,27 +354,25 @@ class SimplePrivacyShield {
             this.addProtection(element, elementId);
             this.showClickNotification("🛡️ Auto-protected", element);
             this.addToHistory({ action: "auto-protect", elementId, element });
+            this.updateBadge();
           }
         }
       }, 1000);
     }
   }
 
+  // Protection Methods
   addProtection(element, elementId) {
-    // Store original content
     const originalData = {
       filter: element.style.filter || "",
       textContent: element.textContent,
       innerHTML: element.innerHTML,
-      outline: element.style.outline || "",
-      outlineOffset: element.style.outlineOffset || "",
       background: element.style.background || "",
       color: element.style.color || "",
     };
 
     this.originalContent.set(elementId, originalData);
 
-    // Apply protection
     switch (this.mode) {
       case "blur":
         element.style.filter = `blur(${this.blurIntensity}px)`;
@@ -367,7 +386,6 @@ class SimplePrivacyShield {
         break;
     }
 
-    // Apply styling
     element.classList.add("privacy-shield-protected");
     element.title = "Protected - Click to remove";
 
@@ -382,7 +400,6 @@ class SimplePrivacyShield {
     const originalData = this.originalContent.get(elementId);
     if (!originalData) return;
 
-    // Restore original content
     Object.keys(originalData).forEach((property) => {
       if (property === "innerHTML") {
         element.innerHTML = originalData[property];
@@ -421,12 +438,13 @@ class SimplePrivacyShield {
     });
   }
 
+  // Mode and Settings Updates
   changeMode(message) {
     this.mode = message.mode;
     this.blurIntensity = message.blurIntensity || this.blurIntensity;
     this.maskSymbol = message.maskSymbol || this.maskSymbol;
 
-    this.showNotification(`Mode: ${this.mode}`, "info");
+    this.showNotification(`Mode changed to: ${this.mode}`, "info");
     return { mode: this.mode };
   }
 
@@ -458,9 +476,9 @@ class SimplePrivacyShield {
     return { maskSymbol: this.maskSymbol };
   }
 
-  emergencyBlurAll(customIntensity = null) {
-    const intensity = customIntensity || Math.max(this.blurIntensity, 20);
-
+  // Emergency and Bulk Actions
+  emergencyBlurAll() {
+    const intensity = Math.max(this.blurIntensity, 20);
     document.body.style.filter = `blur(${intensity}px)`;
     document.body.style.transition = "filter 0.5s ease";
 
@@ -493,24 +511,26 @@ class SimplePrivacyShield {
     `;
 
     overlay.innerHTML = `
-      <div style="text-align: center; padding: 40px;">
-        <div style="font-size: 64px; margin-bottom: 20px;">🛡️</div>
-        <h1 style="font-size: 32px; margin-bottom: 16px;">PRIVACY PROTECTION ACTIVE</h1>
-        <p style="font-size: 16px; margin-bottom: 24px; opacity: 0.9;">
-          All content has been blurred for privacy
+      <div style="text-align: center; padding: 50px; max-width: 500px;">
+        <div style="font-size: 80px; margin-bottom: 30px;">🛡️</div>
+        <h1 style="font-size: 36px; margin-bottom: 20px; font-weight: 700;">PRIVACY PROTECTION ACTIVE</h1>
+        <p style="font-size: 18px; margin-bottom: 30px; opacity: 0.9; line-height: 1.5;">
+          All content has been secured for privacy protection
         </p>
-        <button onclick="window.privacyShield.restoreFromEmergency()" 
-                style="background: #4CAF50; color: white; border: none; 
-                       padding: 16px 32px; font-size: 16px; border-radius: 8px; 
-                       cursor: pointer; margin-right: 12px;">
-          🔓 RESTORE
-        </button>
-        <button onclick="window.location.reload();" 
-                style="background: #2196F3; color: white; border: none; 
-                       padding: 16px 32px; font-size: 16px; border-radius: 8px; 
-                       cursor: pointer;">
-          🔄 REFRESH
-        </button>
+        <div style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+          <button onclick="window.privacyShield.restoreFromEmergency()" 
+                  style="background: #4CAF50; color: white; border: none; 
+                         padding: 18px 36px; font-size: 16px; border-radius: 10px; 
+                         cursor: pointer; font-weight: 600; min-width: 140px;">
+            🔓 RESTORE
+          </button>
+          <button onclick="window.location.reload();" 
+                  style="background: #2196F3; color: white; border: none; 
+                         padding: 18px 36px; font-size: 16px; border-radius: 10px; 
+                         cursor: pointer; font-weight: 600; min-width: 140px;">
+            🔄 REFRESH
+          </button>
+        </div>
       </div>
     `;
 
@@ -547,12 +567,14 @@ class SimplePrivacyShield {
       `🧹 Removed ${totalElements} protected elements`,
       "success"
     );
+    this.updateBadge();
     return { removed: totalElements };
   }
 
+  // History and Undo
   addToHistory(action) {
     this.actionHistory.push({ ...action, timestamp: Date.now() });
-    if (this.actionHistory.length > 20) {
+    if (this.actionHistory.length > 10) {
       this.actionHistory.shift();
     }
   }
@@ -583,17 +605,17 @@ class SimplePrivacyShield {
       this.showClickNotification("↶ Undid removal", element);
     }
 
+    this.updateBadge();
     return { success: true };
   }
 
-  // Utility methods
+  // Utility Methods
   isPrivacyShieldUI(element) {
     const uiSelectors = [
       ".privacy-notification",
       "#emergency-overlay",
       ".privacy-click-notification",
     ];
-
     return uiSelectors.some((selector) => element.closest(selector));
   }
 
@@ -605,12 +627,10 @@ class SimplePrivacyShield {
       /\b\d{3}[\s.-]?\d{3}[\s.-]?\d{4}\b/, // Phone
       /\b(?:password|pwd|pass)\b/i, // Password fields
     ];
-
     return sensitivePatterns.some((pattern) => pattern.test(text));
   }
 
   showNotification(message, type = "success") {
-    // Remove existing notification to prevent duplicates
     const existing = document.querySelector(".privacy-notification");
     if (existing) existing.remove();
 
@@ -618,7 +638,6 @@ class SimplePrivacyShield {
     notification.className = "privacy-notification";
     notification.textContent = message;
 
-    // Set border color based on type
     const colors = {
       success: "#4CAF50",
       info: "#2196F3",
@@ -629,7 +648,6 @@ class SimplePrivacyShield {
     notification.style.borderLeftColor = colors[type] || colors.success;
     document.body.appendChild(notification);
 
-    // Auto-remove after 3 seconds
     setTimeout(() => {
       if (notification.parentNode) {
         notification.style.animation = "slideOut 0.3s ease forwards";
@@ -645,7 +663,7 @@ class SimplePrivacyShield {
 
     const rect = element.getBoundingClientRect();
     notification.style.cssText += `
-      top: ${rect.top - 40}px;
+      top: ${rect.top - 50}px;
       left: ${rect.left + rect.width / 2}px;
       transform: translateX(-50%);
     `;
@@ -674,7 +692,25 @@ class SimplePrivacyShield {
     return element.dataset.privacyShieldId;
   }
 
-  // Cleanup method
+  updateBadge() {
+    chrome.runtime
+      .sendMessage({
+        action: "updateBadge",
+        count: this.protectedElements.size,
+      })
+      .catch(() => {});
+  }
+
+  notifyPopup() {
+    chrome.runtime
+      .sendMessage({
+        action: "statusUpdate",
+        enabled: this.enabled,
+      })
+      .catch(() => {});
+  }
+
+  // Cleanup
   destroy() {
     this.removeAllProtection();
     this.deactivate();
@@ -686,27 +722,9 @@ class SimplePrivacyShield {
   }
 }
 
-// Initialize and expose globally
+// Initialize Privacy Shield
 if (!window.privacyShield) {
-  window.privacyShield = new SimplePrivacyShield();
-}
-
-// Add missing CSS animations
-const additionalStyles = `
-  @keyframes slideOut {
-    from { transform: translateX(0); opacity: 1; }
-    to { transform: translateX(100%); opacity: 0; }
-  }
-  
-  @keyframes fadeOut {
-    from { opacity: 1; transform: translateX(-50%) translateY(0); }
-    to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-  }
-`;
-
-const styleSheet = document.getElementById("privacy-shield-styles");
-if (styleSheet) {
-  styleSheet.textContent += additionalStyles;
+  window.privacyShield = new PrivacyShield();
 }
 
 // Cleanup on page unload

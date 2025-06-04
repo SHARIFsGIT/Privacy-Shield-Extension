@@ -9,60 +9,91 @@
   <body>
     <div class="container">
       <!-- Header -->
-      <div class="header">
+      <header class="header">
         <div class="logo">
           <span class="logo-icon">🛡️</span>
           <h1>Privacy Shield Pro</h1>
         </div>
-        <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+        <button
+          class="theme-toggle"
+          id="theme-toggle"
+          title="Toggle theme"
+          aria-label="Toggle dark/light theme"
+        >
           <span class="theme-icon">🌙</span>
         </button>
-      </div>
+      </header>
 
       <!-- Main Toggle -->
-      <div class="main-toggle-section">
+      <section class="main-toggle-section">
         <div class="toggle-container">
           <div class="toggle-info">
-            <span class="toggle-label">Protection</span>
+            <label class="toggle-label" for="main-toggle"
+              >Protection Status</label
+            >
             <div class="status" id="status">Click to activate</div>
           </div>
           <label class="switch">
-            <input type="checkbox" id="main-toggle" />
+            <input type="checkbox" id="main-toggle" aria-describedby="status" />
             <span class="slider"></span>
           </label>
         </div>
-      </div>
+      </section>
 
       <!-- Stats (shown when active) -->
-      <div class="stats-section" id="stats-section" style="display: none">
+      <section
+        class="stats-section"
+        id="stats-section"
+        style="display: none"
+        aria-live="polite"
+      >
         <div class="stat-item">
           <span class="stat-number" id="protected-count">0</span>
           <span class="stat-label">Protected Elements</span>
         </div>
-      </div>
+      </section>
 
       <!-- Protection Modes -->
-      <div class="modes-section">
+      <section class="modes-section">
         <h3>Protection Mode</h3>
-        <div class="modes-grid">
-          <label class="mode-card active" for="blur">
-            <input type="radio" id="blur" name="mode" value="blur" checked />
+        <div class="modes-grid" role="radiogroup" aria-label="Protection modes">
+          <label class="mode-card active" for="blur" tabindex="0">
+            <input
+              type="radio"
+              id="blur"
+              name="mode"
+              value="blur"
+              checked
+              aria-describedby="blur-desc"
+            />
             <div class="mode-content">
               <span class="mode-icon">🌫️</span>
               <span class="mode-name">Blur</span>
             </div>
           </label>
 
-          <label class="mode-card" for="mask">
-            <input type="radio" id="mask" name="mode" value="mask" />
+          <label class="mode-card" for="mask" tabindex="0">
+            <input
+              type="radio"
+              id="mask"
+              name="mode"
+              value="mask"
+              aria-describedby="mask-desc"
+            />
             <div class="mode-content">
               <span class="mode-icon">✱</span>
               <span class="mode-name">Mask</span>
             </div>
           </label>
 
-          <label class="mode-card" for="blackout">
-            <input type="radio" id="blackout" name="mode" value="blackout" />
+          <label class="mode-card" for="blackout" tabindex="0">
+            <input
+              type="radio"
+              id="blackout"
+              name="mode"
+              value="blackout"
+              aria-describedby="blackout-desc"
+            />
             <div class="mode-content">
               <span class="mode-icon">⚫</span>
               <span class="mode-name">Hide</span>
@@ -70,53 +101,116 @@
           </label>
         </div>
 
-        <!-- Blur Intensity (shown only for blur mode) -->
+        <!-- Blur Intensity Control -->
         <div class="intensity-control" id="intensity-control">
-          <label>Blur Intensity: <span id="intensity-value">8</span>px</label>
-          <input type="range" id="blur-intensity" min="2" max="20" value="8" />
-        </div>
-
-        <!-- Mask Symbol (shown only for mask mode) -->
-        <div class="mask-control" id="mask-control" style="display: none">
-          <label>Mask Symbol:</label>
-          <div class="symbol-options">
-            <button class="symbol-btn active" data-symbol="*">*</button>
-            <button class="symbol-btn" data-symbol="#">#</button>
-            <button class="symbol-btn" data-symbol="•">•</button>
-            <button class="symbol-btn" data-symbol="█">█</button>
+          <label for="blur-intensity">
+            Blur Intensity: <span id="intensity-value">8</span>px
+          </label>
+          <input
+            type="range"
+            id="blur-intensity"
+            min="2"
+            max="20"
+            value="8"
+            aria-describedby="intensity-desc"
+          />
+          <div id="intensity-desc" class="sr-only">
+            Adjust blur intensity from 2 to 20 pixels
           </div>
         </div>
-      </div>
+
+        <!-- Mask Symbol Control -->
+        <div class="mask-control" id="mask-control" style="display: none">
+          <label>Mask Symbol:</label>
+          <div
+            class="symbol-options"
+            role="radiogroup"
+            aria-label="Mask symbols"
+          >
+            <button
+              class="symbol-btn active"
+              data-symbol="*"
+              aria-pressed="true"
+            >
+              *
+            </button>
+            <button class="symbol-btn" data-symbol="#" aria-pressed="false">
+              #
+            </button>
+            <button class="symbol-btn" data-symbol="•" aria-pressed="false">
+              •
+            </button>
+            <button class="symbol-btn" data-symbol="█" aria-pressed="false">
+              █
+            </button>
+          </div>
+        </div>
+      </section>
 
       <!-- Quick Actions -->
-      <div class="actions-section">
+      <section class="actions-section">
         <h3>Quick Actions</h3>
         <div class="actions-grid">
-          <button class="action-btn primary" id="take-screenshot">
+          <button
+            class="action-btn primary"
+            id="take-screenshot"
+            aria-describedby="screenshot-desc"
+          >
             <span class="btn-icon">📸</span>
             <span class="btn-text">Screenshot</span>
           </button>
 
-          <button class="action-btn danger" id="emergency-blur">
+          <button
+            class="action-btn danger"
+            id="emergency-blur"
+            aria-describedby="emergency-desc"
+          >
             <span class="btn-icon">🚨</span>
             <span class="btn-text">Emergency</span>
           </button>
 
-          <button class="action-btn success" id="remove-all">
+          <button
+            class="action-btn success"
+            id="remove-all"
+            aria-describedby="clear-desc"
+          >
             <span class="btn-icon">🧹</span>
             <span class="btn-text">Clear All</span>
           </button>
 
-          <button class="action-btn info" id="undo-action">
+          <button
+            class="action-btn info"
+            id="undo-action"
+            aria-describedby="undo-desc"
+          >
             <span class="btn-icon">↶</span>
             <span class="btn-text">Undo</span>
           </button>
         </div>
-      </div>
+
+        <!-- Screen reader descriptions -->
+        <div class="sr-only">
+          <div id="screenshot-desc">
+            Take a screenshot of the current page with protection applied
+          </div>
+          <div id="emergency-desc">
+            Instantly blur all content on the page for emergency privacy
+          </div>
+          <div id="clear-desc">
+            Remove all privacy protection from the current page
+          </div>
+          <div id="undo-desc">Undo the last protection action</div>
+          <div id="blur-desc">Blur content with adjustable intensity</div>
+          <div id="mask-desc">Replace text with mask characters</div>
+          <div id="blackout-desc">
+            Completely hide content with black overlay
+          </div>
+        </div>
+      </section>
 
       <!-- Keyboard Shortcuts -->
-      <div class="shortcuts-section">
-        <h3>Shortcuts</h3>
+      <section class="shortcuts-section">
+        <h3>Keyboard Shortcuts</h3>
         <div class="shortcut-list">
           <div class="shortcut-item">
             <kbd>Alt + P</kbd>
@@ -132,19 +226,44 @@
           </div>
           <div class="shortcut-item">
             <kbd>Ctrl + Z</kbd>
-            <span>Undo</span>
+            <span>Undo Last Action</span>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Footer -->
-      <div class="footer">
-        <span>© 2024 Shariful Islam</span>
-      </div>
+      <footer class="footer">
+        <div>
+          © 2024 <strong>Shariful Islam</strong> — <em>Privacy Shield Pro</em> ·
+          Content Protection Reinvented
+        </div>
+        <div class="footer-links">
+          🔗
+          <a href="https://github.com/SHARIFsGIT" target="_blank">GitHub</a> |
+          <a href="https://shariful-portfolio.vercel.app/" target="_blank"
+            >Portfolio</a
+          >
+        </div>
+      </footer>
     </div>
 
     <!-- Toast Container -->
-    <div class="toast-container" id="toast-container"></div>
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+    <!-- Screen reader only styles -->
+    <style>
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
 
     <script src="popup.js"></script>
   </body>

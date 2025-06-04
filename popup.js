@@ -1,5 +1,5 @@
-// Privacy Shield Pro - Simplified Popup Controller
-class SimplePopupController {
+// Privacy Shield Pro - Professional Popup Controller
+class PopupController {
   constructor() {
     this.settings = {
       enabled: false,
@@ -10,14 +10,24 @@ class SimplePopupController {
     };
     this.notificationQueue = [];
     this.isShowingNotification = false;
+    this.isInitialized = false;
+
     this.init();
   }
 
-  init() {
-    this.initElements();
-    this.loadSettings();
-    this.initEventListeners();
-    this.checkContentScript();
+  async init() {
+    if (this.isInitialized) return;
+
+    try {
+      this.initElements();
+      await this.loadSettings();
+      this.initEventListeners();
+      await this.checkContentScript();
+      this.isInitialized = true;
+    } catch (error) {
+      console.error("Popup initialization failed:", error);
+      this.showToast("Initialization failed", "error");
+    }
   }
 
   initElements() {
@@ -48,7 +58,7 @@ class SimplePopupController {
     this.removeAll = document.getElementById("remove-all");
     this.undoAction = document.getElementById("undo-action");
 
-    // Toast
+    // Toast container
     this.toastContainer = document.getElementById("toast-container");
   }
 
@@ -64,21 +74,23 @@ class SimplePopupController {
 
       this.settings = { ...this.settings, ...data };
       this.applySettings();
+      this.updateStats();
     } catch (error) {
       console.error("Failed to load settings:", error);
+      this.showToast("Failed to load settings", "warning");
     }
   }
 
   applySettings() {
     // Apply theme
     document.body.setAttribute("data-theme", this.settings.theme);
-    this.themeIcon.textContent = this.settings.theme === "dark" ? "☀️" : "🌙";
+    this.themeIcon.textContent = this.settings.theme === "dark" ? "☀️" : "🌑";
 
     // Apply main toggle
     this.mainToggle.checked = this.settings.enabled;
     this.updateStatus();
 
-    // Apply mode
+    // Apply mode selection
     const modeRadio = document.querySelector(
       `input[value="${this.settings.mode}"]`
     );
@@ -88,17 +100,16 @@ class SimplePopupController {
       this.updateModeControls();
     }
 
-    // Apply intensity
+    // Apply blur intensity
     this.blurIntensity.value = this.settings.blurIntensity;
     this.intensityValue.textContent = this.settings.blurIntensity;
 
     // Apply mask symbol
     this.updateSymbolSelection();
 
-    // Update stats if enabled
+    // Show stats if enabled
     if (this.settings.enabled) {
       this.statsSection.style.display = "block";
-      this.updateStats();
     }
   }
 
@@ -113,13 +124,21 @@ class SimplePopupController {
       this.handleToggleChange(e.target.checked);
     });
 
-    // Mode selection
+    // Mode selection - both click and keyboard
     this.modeCards.forEach((card) => {
-      card.addEventListener("click", () => {
+      const handleModeSelect = () => {
         const radio = card.querySelector('input[type="radio"]');
-        if (radio) {
+        if (radio && !radio.checked) {
           radio.checked = true;
           this.handleModeChange(radio.value);
+        }
+      };
+
+      card.addEventListener("click", handleModeSelect);
+      card.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleModeSelect();
         }
       });
     });
@@ -156,22 +175,52 @@ class SimplePopupController {
       this.handleUndo();
     });
 
-    // Listen for content script updates
+    // Listen for content script messages
     chrome.runtime.onMessage.addListener((message) => {
       if (message.action === "statusUpdate") {
         this.settings.enabled = message.enabled;
         this.mainToggle.checked = message.enabled;
         this.updateStatus();
+        this.updateStats();
       }
     });
+
+    // Keyboard navigation
+    document.addEventListener("keydown", (e) => {
+      this.handleKeyboardNavigation(e);
+    });
+  }
+
+  handleKeyboardNavigation(e) {
+    // Quick actions via keyboard
+    if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+      switch (e.key.toLowerCase()) {
+        case "p":
+          e.preventDefault();
+          this.mainToggle.click();
+          break;
+        case "e":
+          e.preventDefault();
+          this.emergencyBlur.click();
+          break;
+        case "r":
+          e.preventDefault();
+          this.removeAll.click();
+          break;
+      }
+    }
   }
 
   toggleTheme() {
     this.settings.theme = this.settings.theme === "light" ? "dark" : "light";
     document.body.setAttribute("data-theme", this.settings.theme);
-    this.themeIcon.textContent = this.settings.theme === "dark" ? "☀️" : "🌙";
+    this.themeIcon.textContent = this.settings.theme === "dark" ? "☀️" : "🌑";
 
     chrome.storage.sync.set({ theme: this.settings.theme });
+    this.showToast(
+      `${this.settings.theme === "dark" ? "Dark" : "Light"} theme applied`,
+      "info"
+    );
   }
 
   async handleToggleChange(enabled) {
@@ -184,17 +233,18 @@ class SimplePopupController {
       this.updateStatus();
 
       if (enabled) {
-        this.showToast("🛡️ Protection activated!", "success");
+        this.showToast("Protection activated", "success");
         this.statsSection.style.display = "block";
         this.updateStats();
       } else {
-        this.showToast("🔓 Protection deactivated", "info");
+        this.showToast("Protection deactivated", "info");
         this.statsSection.style.display = "none";
       }
     } catch (error) {
       console.error("Toggle error:", error);
-      this.showToast("❌ Failed to toggle protection", "error");
+      this.showToast("Failed to toggle protection", "error");
       this.mainToggle.checked = !enabled;
+      this.settings.enabled = !enabled;
     }
   }
 
@@ -214,15 +264,15 @@ class SimplePopupController {
       this.updateModeControls();
 
       const modeNames = {
-        blur: "🌫️ Blur mode",
-        mask: "✱ Mask mode",
-        blackout: "⚫ Hide mode",
+        blur: "🌫️ Blur mode activated",
+        mask: "✱ Mask mode activated",
+        blackout: "⚫ Hide mode activated",
       };
 
       this.showToast(modeNames[mode], "info");
     } catch (error) {
       console.error("Mode change error:", error);
-      this.showToast("❌ Failed to change mode", "error");
+      this.showToast("Failed to change mode", "error");
     }
   }
 
@@ -254,6 +304,7 @@ class SimplePopupController {
       this.showToast(`Symbol changed to: ${symbol}`, "info");
     } catch (error) {
       console.error("Symbol change error:", error);
+      this.showToast("Failed to change symbol", "error");
     }
   }
 
@@ -261,7 +312,6 @@ class SimplePopupController {
     this.setButtonLoading(this.takeScreenshot, true);
 
     try {
-      // Use the more reliable screen capture API
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           mediaSource: "screen",
@@ -289,11 +339,11 @@ class SimplePopupController {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0);
 
-      // Clean up video element and stream
+      // Cleanup
       document.body.removeChild(video);
       stream.getTracks().forEach((track) => track.stop());
 
-      // Download the screenshot
+      // Download screenshot
       canvas.toBlob(
         (blob) => {
           const url = URL.createObjectURL(blob);
@@ -308,7 +358,7 @@ class SimplePopupController {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
 
-          this.showToast("📸 Screenshot saved!", "success");
+          this.showToast("Screenshot saved successfully", "success");
         },
         "image/png",
         0.95
@@ -316,9 +366,9 @@ class SimplePopupController {
     } catch (error) {
       console.error("Screenshot error:", error);
       if (error.name === "NotAllowedError") {
-        this.showToast("❌ Screen capture permission denied", "error");
+        this.showToast("Screen capture permission denied", "error");
       } else {
-        this.showToast("❌ Screenshot failed", "error");
+        this.showToast("Screenshot failed", "error");
       }
     } finally {
       this.setButtonLoading(this.takeScreenshot, false);
@@ -334,10 +384,10 @@ class SimplePopupController {
         blurIntensity: Math.max(this.settings.blurIntensity, 20),
       });
 
-      this.showToast("🚨 Emergency protection activated!", "warning");
+      this.showToast("Emergency protection activated", "warning");
     } catch (error) {
       console.error("Emergency blur error:", error);
-      this.showToast("❌ Emergency blur failed", "error");
+      this.showToast("Emergency protection failed", "error");
     } finally {
       setTimeout(() => {
         this.setButtonLoading(this.emergencyBlur, false);
@@ -352,18 +402,22 @@ class SimplePopupController {
       const result = await this.sendMessageToTab({ action: "removeAll" });
 
       if (result && result.removed !== undefined) {
-        this.showToast(
-          `🧹 Removed ${result.removed} protected elements`,
-          "success"
-        );
+        if (result.removed > 0) {
+          this.showToast(
+            `Removed ${result.removed} protected elements`,
+            "success"
+          );
+        } else {
+          this.showToast("No protected elements found", "info");
+        }
       } else {
-        this.showToast("🧹 All protection removed", "success");
+        this.showToast("All protection removed", "success");
       }
 
       this.updateStats();
     } catch (error) {
       console.error("Remove all error:", error);
-      this.showToast("❌ Failed to remove protection", "error");
+      this.showToast("Failed to remove protection", "error");
     } finally {
       setTimeout(() => {
         this.setButtonLoading(this.removeAll, false);
@@ -378,15 +432,14 @@ class SimplePopupController {
       const result = await this.sendMessageToTab({ action: "undoLastAction" });
 
       if (result && result.success) {
-        this.showToast("↶ Action undone", "info");
+        this.showToast("↶ Last action undone", "info");
+        this.updateStats();
       } else {
-        this.showToast("⚠️ No actions to undo", "warning");
+        this.showToast("No actions to undo", "warning");
       }
-
-      this.updateStats();
     } catch (error) {
       console.error("Undo error:", error);
-      this.showToast("❌ Undo failed", "error");
+      this.showToast("Undo failed", "error");
     } finally {
       setTimeout(() => {
         this.setButtonLoading(this.undoAction, false);
@@ -394,9 +447,10 @@ class SimplePopupController {
     }
   }
 
+  // UI Update Methods
   updateStatus() {
     if (this.settings.enabled) {
-      this.status.textContent = "Active - Click elements to protect";
+      this.status.textContent = "Active 🛡️";
       this.status.className = "status active";
     } else {
       this.status.textContent = "Click to activate";
@@ -409,8 +463,10 @@ class SimplePopupController {
       const radio = card.querySelector('input[type="radio"]');
       if (radio && radio.checked) {
         card.classList.add("active");
+        card.setAttribute("aria-pressed", "true");
       } else {
         card.classList.remove("active");
+        card.setAttribute("aria-pressed", "false");
       }
     });
   }
@@ -432,8 +488,10 @@ class SimplePopupController {
     this.symbolBtns.forEach((btn) => {
       if (btn.dataset.symbol === this.settings.maskSymbol) {
         btn.classList.add("active");
+        btn.setAttribute("aria-pressed", "true");
       } else {
         btn.classList.remove("active");
+        btn.setAttribute("aria-pressed", "false");
       }
     });
   }
@@ -443,12 +501,12 @@ class SimplePopupController {
 
     try {
       const stats = await this.sendMessageToTab({ action: "getStats" });
-
-      if (stats) {
-        this.protectedCount.textContent = stats.totalProtected || 0;
+      if (stats && stats.totalProtected !== undefined) {
+        this.protectedCount.textContent = stats.totalProtected;
       }
     } catch (error) {
       console.error("Stats update error:", error);
+      this.protectedCount.textContent = "0";
     }
   }
 
@@ -473,14 +531,14 @@ class SimplePopupController {
 
   showRefreshWarning() {
     this.showToast(
-      "⚠️ Please refresh the page to activate Privacy Shield",
+      "Please refresh the page to activate Privacy Shield",
       "warning",
       5000
     );
   }
 
+  // Notification System
   showToast(message, type = "info", duration = 3000) {
-    // Add to queue if another notification is showing
     if (this.isShowingNotification) {
       this.notificationQueue.push({ message, type, duration });
       return;
@@ -505,12 +563,12 @@ class SimplePopupController {
 
     this.toastContainer.appendChild(toast);
 
-    // Show animation
+    // Animate in
     requestAnimationFrame(() => {
       toast.classList.add("show");
     });
 
-    // Hide and remove
+    // Auto remove
     setTimeout(() => {
       toast.classList.remove("show");
       setTimeout(() => {
@@ -519,7 +577,7 @@ class SimplePopupController {
         }
         this.isShowingNotification = false;
 
-        // Show next notification in queue
+        // Show next notification
         if (this.notificationQueue.length > 0) {
           const next = this.notificationQueue.shift();
           this.showToast(next.message, next.type, next.duration);
@@ -532,9 +590,11 @@ class SimplePopupController {
     if (loading) {
       button.classList.add("loading");
       button.disabled = true;
+      button.setAttribute("aria-busy", "true");
     } else {
       button.classList.remove("loading");
       button.disabled = false;
+      button.setAttribute("aria-busy", "false");
     }
   }
 
@@ -547,6 +607,7 @@ class SimplePopupController {
       if (tabs[0]) {
         return await chrome.tabs.sendMessage(tabs[0].id, message);
       }
+      throw new Error("No active tab found");
     } catch (error) {
       console.error("Message send error:", error);
       throw error;
@@ -556,5 +617,5 @@ class SimplePopupController {
 
 // Initialize popup when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
-  new SimplePopupController();
+  new PopupController();
 });

@@ -1,25 +1,38 @@
 {
   "manifest_version": 3,
-  "name": "Privacy Shield",
-  "version": "1.0.0",
-  "description": "Simple and powerful content protection with blur, mask, and screenshot modes",
+  "name": "Privacy Shield Pro",
+  "version": "2.0.0",
+  "description": "Professional content protection with advanced blur, mask, and hide modes for enhanced privacy",
   "author": "Shariful Islam",
+  "homepage_url": "https://github.com/shariful/privacy-shield",
 
-  "permissions": ["activeTab", "storage", "desktopCapture"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "notifications",
+    "contextMenus",
+    "desktopCapture"
+  ],
 
   "host_permissions": ["<all_urls>"],
+
+  "background": {
+    "service_worker": "background.js"
+  },
 
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_start"
+      "css": ["styles.css"],
+      "run_at": "document_start",
+      "all_frames": false
     }
   ],
 
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Privacy Shield",
+    "default_title": "Privacy Shield Pro",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -38,25 +51,35 @@
   "commands": {
     "toggle-protection": {
       "suggested_key": {
-        "default": "Alt+P"
+        "default": "Alt+P",
+        "mac": "Command+Shift+P"
       },
       "description": "Toggle Privacy Shield protection"
     },
     "emergency-blur": {
       "suggested_key": {
-        "default": "Alt+E"
+        "default": "Alt+E",
+        "mac": "Command+Shift+E"
       },
       "description": "Emergency blur all content"
     },
     "remove-all": {
       "suggested_key": {
-        "default": "Alt+R"
+        "default": "Alt+R",
+        "mac": "Command+Shift+R"
       },
       "description": "Remove all protection"
     }
   },
 
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline'"
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
