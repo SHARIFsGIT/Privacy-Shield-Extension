@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>Privacy Shield Pro</title>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo">
+          <span class="logo-icon">🛡️</span>
+          <h1>Privacy Shield Pro</h1>
+        </div>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+          <span class="theme-icon">🌙</span>
+        </button>
+      </div>
+
+      <!-- Main Toggle -->
+      <div class="main-toggle-section">
+        <div class="toggle-container">
+          <div class="toggle-info">
+            <span class="toggle-label">Protection</span>
+            <div class="status" id="status">Click to activate</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="main-toggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Stats (shown when active) -->
+      <div class="stats-section" id="stats-section" style="display: none">
+        <div class="stat-item">
+          <span class="stat-number" id="protected-count">0</span>
+          <span class="stat-label">Protected Elements</span>
+        </div>
+      </div>
+
+      <!-- Protection Modes -->
+      <div class="modes-section">
+        <h3>Protection Mode</h3>
+        <div class="modes-grid">
+          <label class="mode-card active" for="blur">
+            <input type="radio" id="blur" name="mode" value="blur" checked />
+            <div class="mode-content">
+              <span class="mode-icon">🌫️</span>
+              <span class="mode-name">Blur</span>
+            </div>
+          </label>
+
+          <label class="mode-card" for="mask">
+            <input type="radio" id="mask" name="mode" value="mask" />
+            <div class="mode-content">
+              <span class="mode-icon">✱</span>
+              <span class="mode-name">Mask</span>
+            </div>
+          </label>
+
+          <label class="mode-card" for="blackout">
+            <input type="radio" id="blackout" name="mode" value="blackout" />
+            <div class="mode-content">
+              <span class="mode-icon">⚫</span>
+              <span class="mode-name">Hide</span>
+            </div>
+          </label>
+        </div>
+
+        <!-- Blur Intensity (shown only for blur mode) -->
+        <div class="intensity-control" id="intensity-control">
+          <label>Blur Intensity: <span id="intensity-value">8</span>px</label>
+          <input type="range" id="blur-intensity" min="2" max="20" value="8" />
+        </div>
+
+        <!-- Mask Symbol (shown only for mask mode) -->
+        <div class="mask-control" id="mask-control" style="display: none">
+          <label>Mask Symbol:</label>
+          <div class="symbol-options">
+            <button class="symbol-btn active" data-symbol="*">*</button>
+            <button class="symbol-btn" data-symbol="#">#</button>
+            <button class="symbol-btn" data-symbol="•">•</button>
+            <button class="symbol-btn" data-symbol="█">█</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="actions-section">
+        <h3>Quick Actions</h3>
+        <div class="actions-grid">
+          <button class="action-btn primary" id="take-screenshot">
+            <span class="btn-icon">📸</span>
+            <span class="btn-text">Screenshot</span>
+          </button>
+
+          <button class="action-btn danger" id="emergency-blur">
+            <span class="btn-icon">🚨</span>
+            <span class="btn-text">Emergency</span>
+          </button>
+
+          <button class="action-btn success" id="remove-all">
+            <span class="btn-icon">🧹</span>
+            <span class="btn-text">Clear All</span>
+          </button>
+
+          <button class="action-btn info" id="undo-action">
+            <span class="btn-icon">↶</span>
+            <span class="btn-text">Undo</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Keyboard Shortcuts -->
+      <div class="shortcuts-section">
+        <h3>Shortcuts</h3>
+        <div class="shortcut-list">
+          <div class="shortcut-item">
+            <kbd>Alt + P</kbd>
+            <span>Toggle Protection</span>
+          </div>
+          <div class="shortcut-item">
+            <kbd>Alt + E</kbd>
+            <span>Emergency Blur</span>
+          </div>
+          <div class="shortcut-item">
+            <kbd>Alt + R</kbd>
+            <span>Remove All</span>
+          </div>
+          <div class="shortcut-item">
+            <kbd>Ctrl + Z</kbd>
+            <span>Undo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <span>© 2024 Shariful Islam</span>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
