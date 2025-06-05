@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Privacy Shield Pro",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "Professional content protection with advanced blur, mask, and hide modes for enhanced privacy",
   "author": "Shariful Islam",
   "homepage_url": "https://github.com/shariful/privacy-shield",
